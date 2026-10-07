@@ -10,6 +10,15 @@ import {
 import Button from './Atoms/Button.jsx';
 import StatusBadge from './Atoms/StatusBadge.jsx';
 import TextField from './Atoms/TextField.jsx';
+import {
+  addProductToCart,
+  blockUserById,
+  deleteProductAfterConfirmation,
+  filterProducts,
+  getCartSummary,
+  getProductStockStatus,
+  getSignupErrors,
+} from './domain.js';
 import heroImage from '../levelup-reference.png';
 
 const products = [
@@ -93,40 +102,21 @@ function Storefront() {
   const [signupErrors, setSignupErrors] = useState({});
 
   const visibleProducts = useMemo(() => {
-    const normalizedSearch = search.trim().toLocaleLowerCase('es');
-    return products.filter((product) => {
-      const matchesCategory = filter === 'Todos' || product.category === filter;
-      const matchesSearch = product.name.toLocaleLowerCase('es').includes(normalizedSearch);
-      return matchesCategory && matchesSearch;
-    });
+    return filterProducts(products, filter, search);
   }, [filter, search]);
 
-  const cartTotal = cart.reduce((total, product) => total + product.price, 0);
+  const cartSummary = getCartSummary(cart);
 
   function submitSignup(event) {
     event.preventDefault();
     const form = event.currentTarget;
     const data = new FormData(form);
-    const name = String(data.get('name') || '').trim();
-    const email = String(data.get('email') || '').trim();
-    const birthdate = String(data.get('birthdate') || '');
-    const errors = {};
-
-    if (name.length < 2) errors.name = 'Ingresa tu nombre.';
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      errors.email = 'Ingresa un correo válido.';
-    } else if (!email.toLowerCase().endsWith('@duoc.cl')) {
-      errors.email = 'Usa un correo @duoc.cl.';
-    }
-
-    const eligibleDate = new Date();
-    eligibleDate.setFullYear(eligibleDate.getFullYear() - 18);
-    if (!birthdate) {
-      errors.birthdate = 'Ingresa tu fecha de nacimiento.';
-    } else if (new Date(`${birthdate}T00:00:00`) > eligibleDate) {
-      errors.birthdate = 'Debes ser mayor de 18 años.';
-    }
-    if (!data.get('terms')) errors.terms = 'Debes aceptar las condiciones.';
+    const errors = getSignupErrors({
+      name: String(data.get('name') || ''),
+      email: String(data.get('email') || ''),
+      birthdate: String(data.get('birthdate') || ''),
+      terms: Boolean(data.get('terms')),
+    });
 
     setSignupErrors(errors);
     setSignupMessage(
@@ -148,7 +138,7 @@ function Storefront() {
           <Nav.Link href="#registro">Registro</Nav.Link>
         </Nav>
         <a className="cart-link" href="#carrito">
-          Carrito <span>{cart.length}</span>
+          Carrito           <span>{cartSummary.count}</span>
         </a>
       </header>
 
@@ -219,7 +209,7 @@ function Storefront() {
                   <strong>{formatPrice(product.price)}</strong>
                   <Button
                     className="add-product"
-                    onClick={() => setCart((current) => [...current, product])}
+                    onClick={() => setCart((current) => addProductToCart(current, product))}
                   >
                     Agregar
                   </Button>
@@ -313,7 +303,7 @@ function Storefront() {
         <div><h3>Atención</h3><a href="mailto:hola@levelupgamer.cl">hola@levelupgamer.cl</a><a href="https://wa.me/56912345678">WhatsApp técnico</a></div>
         <div id="carrito">
           <h3>Carrito</h3>
-          <p>{cart.length === 0 ? 'Aún no agregas productos.' : `${cart.length} producto(s). Total: ${formatPrice(cartTotal)}`}</p>
+          <p>{cartSummary.count === 0 ? 'Aún no agregas productos.' : `${cartSummary.count} producto(s). Total: ${formatPrice(cartSummary.total)}`}</p>
         </div>
         <div><h3>Administración</h3><a href="#/admin/productos">Productos</a><a href="#/admin/usuarios">Usuarios</a></div>
         <p className="copyright">© 2026 Level-Up Gamer</p>
@@ -357,9 +347,11 @@ function ProductList() {
   const [rows, setRows] = useState(initialAdminProducts);
 
   function deleteProduct(id) {
-    if (window.confirm('¿Borrar este producto?')) {
-      setRows((current) => current.filter((product) => product.id !== id));
-    }
+    setRows((current) => deleteProductAfterConfirmation(
+      current,
+      id,
+      (message) => window.confirm(message),
+    ));
   }
 
   return (
@@ -374,7 +366,7 @@ function ProductList() {
           <thead><tr><th>Producto</th><th>Precio</th><th>Stock</th><th>Estado</th><th>Acciones</th></tr></thead>
           <tbody>
             {rows.map((product) => {
-              const status = product.stock === 0 ? 'Sin stock' : product.stock < 10 ? 'Bajo stock' : 'Activo';
+              const status = getProductStockStatus(product.stock);
               return (
                 <tr key={product.id}>
                   <td>{product.name}</td><td>{product.price}</td><td>{product.stock}</td>
@@ -398,7 +390,7 @@ function UserList() {
   const [rows, setRows] = useState(initialUsers);
 
   function blockUser(id) {
-    setRows((current) => current.map((user) => user.id === id ? { ...user, status: 'Bloqueado' } : user));
+    setRows((current) => blockUserById(current, id));
   }
 
   return (

@@ -24,3 +24,9 @@ Vite se utiliza exclusivamente como herramienta de desarrollo y compilación. La
 - Diseño adaptable a pantallas de escritorio y móviles mediante Bootstrap y CSS.
 
 Los datos son de ejemplo y se mantienen únicamente en memoria; no hay autenticación ni persistencia de servidor.
+
+## Pruebas unitarias
+
+Se configuraron Jasmine y Karma con el launcher jsdom para ejecutar pruebas sin requerir instalar un navegador del sistema. La lógica compartida entre React y las pruebas está en `src/domain.js`. La suite contiene 10 pruebas para filtros, registro, carrito, inventario, usuarios y eliminación. Se usa un spy de Jasmine como mock de la confirmación de borrado para probar las ramas de aceptar y cancelar.
+
+Ejecutar con `npm test`. Karma muestra el resultado de cada prueba en la terminal; la compilación también se verifica con `npm run build`.

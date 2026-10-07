@@ -42,3 +42,17 @@ Los componentes pequeños que se repiten entre pantallas están en `src/Atoms/` 
 Así, cada pantalla puede renderizar estos átomos pasándoles sus propiedades y contenido, sin duplicar su estructura.
 
 Las operaciones de administración y el carrito son demostraciones locales; no se guardan en un servidor.
+
+## Pruebas unitarias
+
+El proyecto incluye 10 pruebas con Jasmine ejecutadas por Karma en un entorno de navegador simulado con jsdom. Cubren filtros y búsqueda, validación del registro, cálculo e inmutabilidad del carrito, estados de stock, bloqueo de usuarios y confirmación de borrado.
+
+Las funciones que prueban las pantallas están aisladas en `src/domain.js` y también son utilizadas por la aplicación. La prueba de borrado usa un spy de Jasmine como mock de `window.confirm`, verificando tanto la confirmación como la cancelación sin mostrar un diálogo real.
+
+Ejecuta la suite desde la raíz del proyecto:
+
+```bash
+npm test
+```
+
+Karma informa el resultado de cada prueba en la terminal y devuelve un código de salida distinto de cero si hay fallos.

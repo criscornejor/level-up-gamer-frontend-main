@@ -1,12 +1,8 @@
 import { Badge } from 'react-bootstrap';
+import { getStatusBadgeVariant } from '../domain.js';
 
 function StatusBadge({ status }) {
-  const variant = status === 'Activo'
-    ? 'success'
-    : status === 'Bajo stock' || status === 'Inactivo'
-      ? 'warning'
-      : 'danger';
-
+  const variant = getStatusBadgeVariant(status);
   return <Badge bg={variant}>{status}</Badge>;
 }
 
